@@ -1,27 +1,33 @@
-# Étape 1 : Construction de l'application
-FROM php:8.3.0-fpm
+FROM php:8.3-fpm
 
-# Installation des dépendances
-RUN apt-get update && apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev libzip-dev unzip git
+ARG user
+ARG uid
 
-# Configuration de GD
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg
-RUN docker-php-ext-install gd zip pdo pdo_mysql
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip
 
-# Installation de Composer
+# Clear cache(optional)
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+
+# install composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configuration de l'environnement de travail
-WORKDIR /var/www
+RUN useradd -u $uid -ms /bin/bash -g www-data $user
 
-# Copier les fichiers de l'application
-COPY . .
+COPY . /var/www
 
-# Installer les dépendances de composer
-RUN composer install
+COPY --chown=$user:www-data . /var/www
 
-# Exposer le port
+USER $user
+
 EXPOSE 9000
 
-# Démarrer PHP-FPM
 CMD ["php-fpm"]

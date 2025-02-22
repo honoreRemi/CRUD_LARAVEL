@@ -11,7 +11,7 @@ class EtudiantController extends Controller
 {
     public function liste_etudiant(){
         //$etudiants = Etudiant::all(); // on crée un objet de type Etudiant et on recupère tous les champs de la tables etudiant avec la fonction all()
-        $etudiants = Etudiant::paginate(1); // on crée un objet de type Etudiant et on recupère tous les champs de la tables etudiant avec la fonction all()
+        $etudiants = Etudiant::paginate(2); // on crée un objet de type Etudiant et on recupère tous les champs de la tables etudiant avec la fonction all()
         //on peut passer rn mode pagination en utilisant : $etudiants = Etudiant::generate(10)
         return View('etudiants.liste', compact('etudiants'));
     }

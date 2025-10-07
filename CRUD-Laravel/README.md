@@ -1,66 +1,229 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🧠 TheBrains – Serveur Docker Multi-Projets Automatisé
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 🚀 Présentation
 
-## About Laravel
+**TheBrains** est un outil d’automatisation et d’orchestration destiné à simplifier la **gestion de serveurs multi-projets Docker**.  
+Il installe, configure et maintient un environnement complet avec :
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- 🌍 Un **reverse proxy global (NGINX + ACME)** avec certificats SSL automatiques  
+- ⚙️ Une **infrastructure modulaire** par projet avec ses propres fichiers et variables  
+- 👥 Une **gestion des utilisateurs** et des accès Docker/SSH  
+- 🔄 Des **commandes universelles** : création, suppression, mise à jour, logs, etc.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Ce projet est conçu pour offrir **stabilité**, **sécurité** et **simplicité**, tout en restant **hautement personnalisable**.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🧱 Architecture globale du dossier CI/CD
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```
+cicd/
+│
+├── setup/
+│   ├── setup-thebrains.sh             # Script principal d’installation du serveur
+│   └── thebrains/                     # Scripts de commande "thebrains"
+│       ├── thebrains.sh               # Commande principale
+│       ├── commands/                  # Sous-commandes disponibles
+│       │   ├── create-project.sh
+│       │   ├── delete-project.sh
+│       │   ├── update-project.sh
+│       │   ├── update-system.sh
+│       │   ├── create-user.sh
+│       │   ├── delete-user.sh
+│       │   ├── open-port.sh
+│       │   ├── block-port.sh
+│       │   ├── logs.sh
+│       │   └── ...
+│       └── utils/
+│           └── load-env.sh            # Chargement global des variables d’environnement
+│
+├── services/
+│   └── proxy/                         # Reverse proxy global (NGINX + ACME)
+│       ├── drive/data/nginx/
+│       └── drive/configs/nginx/
+│
+└── projects/
+    ├── demo/
+    │   ├── drive/data/service1/
+    │   ├── drive/configs/service1/
+    │   └── environments/service1/
+    └── ...
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## ⚙️ Installation d’un nouveau serveur
 
-## Laravel Sponsors
+### 1️⃣ Cloner le dépôt CI/CD
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+git clone https://gitlab.com/<organization>/cicd.git
+cd cicd/setup
+```
 
-### Premium Partners
+### 2️⃣ Configurer l’environnement
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+Copie du fichier `.env.example` :
 
-## Contributing
+```bash
+cp .env.example .env
+nano .env
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Ce fichier contient toutes les variables globales (utilisateur, réseau, GitLab, proxy, etc.) :
 
-## Code of Conduct
+```env
+# === Configuration serveur ===
+SERVER_HOST=thebrains-server
+SERVER_USER=thebrains
+SERVER_TIMEZONE=Africa/Douala
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# === Proxy global ===
+THEBRAINS_NETWORK=thebrains-network
+PROXY_HTTP_PORT=80
+PROXY_HTTPS_PORT=443
+PROXY_DASHBOARD_PORT=8080
 
-## Security Vulnerabilities
+# === GitLab pour les mises à jour ===
+GITLAB_URL=https://gitlab.com
+GITLAB_USER=ci-runner
+GITLAB_TOKEN=<YOUR_TOKEN>
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# === Dossiers globaux ===
+CICD_ROOT=/opt/thebrains
+PROJECTS_DIR=${CICD_ROOT}/projects
+SERVICES_DIR=${CICD_ROOT}/services
+CONFIG_DIR=${CICD_ROOT}/drive/configs
+DATA_DIR=${CICD_ROOT}/drive/data
+```
 
-## License
+> 💡 Ces variables sont copiées dans `/etc/thebrains/.env` pour être disponibles globalement à tous les scripts.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+
+### 3️⃣ Lancer le script d’installation
+
+```bash
+sudo bash setup-thebrains.sh
+```
+
+Ce script :
+
+- ⚙️ Installe **Docker, Git, Nginx, Acme.sh, UFW**  
+- 👤 Crée l’utilisateur système `${SERVER_USER}` et le groupe Docker  
+- 🌐 Met en place le **proxy global** (réseau Docker partagé : `${THEBRAINS_NETWORK}`)  
+- 🧩 Déploie les **scripts TheBrains** dans `/usr/local/bin/thebrains`  
+- 🧰 Initialise un projet de démonstration : `demo`
+
+---
+
+## 💻 Utilisation de la commande `thebrains`
+
+Une fois installé, tu peux utiliser `thebrains` depuis n’importe où dans le terminal :
+
+### 🔧 Commandes principales
+
+| Commande | Description |
+|-----------|-------------|
+| `thebrains create project <nom>` | Crée un nouveau projet basé sur le modèle `docker-compose-example.yml` |
+| `thebrains delete project <nom>` | Supprime un projet (avec sauvegarde ZIP avant suppression) |
+| `thebrains update project <nom>` | Reconstruit et redémarre un projet existant |
+| `thebrains logs <container>` | Affiche les 100 dernières lignes de logs du conteneur sélectionné |
+| `thebrains update` | Met à jour les scripts globaux depuis le dépôt GitLab |
+| `thebrains create user <username>` | Crée un nouvel utilisateur et lui donne les accès Docker/SSH |
+| `thebrains delete user <username>` | Supprime un utilisateur du système |
+| `thebrains open port <port>` | Ouvre un port dans le pare-feu |
+| `thebrains block port <port>` | Bloque un port dans le pare-feu |
+
+---
+
+## 🌍 Structure type d’un projet
+
+Chaque projet suit une structure standardisée :
+
+```
+projects/<project-name>/
+│
+├── docker-compose.yml
+├── drive/
+│   ├── data/         # Volumes de données (DB, stockage applicatif)
+│   └── configs/      # Fichiers de config (nginx, supervisor, etc.)
+└── environments/     # Fichiers .env spécifiques
+```
+
+---
+
+## 📦 Exemple de docker-compose
+
+```yaml
+version: "3.8"
+
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: ${PROJECT_NAME}-nginx
+    restart: always
+    expose:
+      - "80"
+    volumes:
+      - ./drive/configs/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./public:/usr/share/nginx/html:ro
+    environment:
+      - VIRTUAL_HOST=${PROJECT_DOMAIN}
+      - LETSENCRYPT_HOST=${PROJECT_DOMAIN}
+      - LETSENCRYPT_EMAIL=${ADMIN_EMAIL}
+    networks:
+      - ${THEBRAINS_NETWORK}
+
+  app:
+    build: .
+    container_name: ${PROJECT_NAME}-app
+    environment:
+      - APP_ENV=production
+      - APP_URL=https://${PROJECT_DOMAIN}
+    networks:
+      - ${THEBRAINS_NETWORK}
+
+networks:
+  ${THEBRAINS_NETWORK}:
+    external: true
+```
+
+---
+
+## 🧩 Création d’un projet manuellement
+
+```bash
+mkdir -p projects/myproject/{drive/configs,drive/data,environments}
+cp cicd/setup/examples/docker-compose-example.yml projects/myproject/docker-compose.yml
+cd projects/myproject
+docker compose up -d
+```
+
+---
+
+## 🔐 Sécurité et bonnes pratiques
+
+- Ne jamais exécuter Docker directement en **root**
+- Chaque projet doit être isolé dans son propre dossier  
+- Le réseau Docker global (`${THEBRAINS_NETWORK}`) ne doit jamais être supprimé  
+- Les certificats sont gérés automatiquement par **acme.sh**  
+- Les ports ouverts doivent être strictement définis dans `.env`
+
+---
+
+## 🧰 Extensions prévues
+
+| Commande future | Description |
+|------------------|-------------|
+| `thebrains backup project <nom>` | Sauvegarde compressée d’un projet |
+| `thebrains restore project <archive>` | Restauration à partir d’une sauvegarde |
+| `thebrains deploy gitlab-pipeline` | Déploiement automatisé depuis GitLab CI |
+| `thebrains diagnostics` | Vérification complète du serveur et des conteneurs |
+
+---
+
+## 🧾 Licence
+
+Ce projet est distribué sous licence **MIT**.  
+Créé avec ❤️ par **TheBrains Group** — Plateforme africaine de technologies collaboratives.
